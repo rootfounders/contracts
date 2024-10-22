@@ -14,15 +14,22 @@ contract MainContractTest is Test {
 
     function test_createProject() public {
         uint expectedId = 0;
-        vm.expectEmit(true, true, true, true);
-        emit RootFounders.ProjectCreated(expectedId, address(this));
+        // we don't check data because we don't know tipJar address
+        vm.expectEmit(true, true, true, false);
+        Project memory expected;
+        expected.id = expectedId;
+        expected.owner = address(this);
+        expected.detailsLocationType = DetailsLocationType.IPFS;
+        expected.detailsLocation = "k51qzi5uqu5dlvj2baxnqndepeb86cbk3ng7n3i46uzyxzyqj2xjonzllnv0v8";
+        expected.shortName = "test project";
+        emit RootFounders.ProjectCreated(expectedId, address(this), expected);
 
-        uint id = rootFounders.createProject(DetailsLocationType.IPNS, "k51qzi5uqu5dlvj2baxnqndepeb86cbk3ng7n3i46uzyxzyqj2xjonzllnv0v8", "test project");
+        uint id = rootFounders.createProject(DetailsLocationType.IPFS, "k51qzi5uqu5dlvj2baxnqndepeb86cbk3ng7n3i46uzyxzyqj2xjonzllnv0v8", "test project");
         assertEq(id, expectedId);
 
         Project memory project = rootFounders.getProject(id);
         assertEq(project.id, id);
-        assertTrue(project.detailsLocationType == DetailsLocationType.IPNS);
+        assertTrue(project.detailsLocationType == DetailsLocationType.IPFS);
         assertEq(project.detailsLocation, "k51qzi5uqu5dlvj2baxnqndepeb86cbk3ng7n3i46uzyxzyqj2xjonzllnv0v8");
         assertEq(project.shortName, "test project");
 
@@ -30,17 +37,17 @@ contract MainContractTest is Test {
 
     function test_createProjectInvalid() public {
         vm.expectRevert("detailsLocation should be at least 62 bytes long");
-        rootFounders.createProject(DetailsLocationType.IPNS, "wrong", "test project");
+        rootFounders.createProject(DetailsLocationType.IPFS, "wrong", "test project");
 
         vm.expectRevert("shortName is required");
-        rootFounders.createProject(DetailsLocationType.IPNS, "k51qzi5uqu5dlvj2baxnqndepeb86cbk3ng7n3i46uzyxzyqj2xjonzllnv0v8", "");
+        rootFounders.createProject(DetailsLocationType.IPFS, "k51qzi5uqu5dlvj2baxnqndepeb86cbk3ng7n3i46uzyxzyqj2xjonzllnv0v8", "");
     }
 
     receive() external payable {}
 
     // TODO: test it with another contract, so that we can check balances
     function test_tip() public {
-        uint id = rootFounders.createProject(DetailsLocationType.IPNS, "k51qzi5uqu5dlvj2baxnqndepeb86cbk3ng7n3i46uzyxzyqj2xjonzllnv0v8", "test project");
+        uint id = rootFounders.createProject(DetailsLocationType.IPFS, "k51qzi5uqu5dlvj2baxnqndepeb86cbk3ng7n3i46uzyxzyqj2xjonzllnv0v8", "test project");
         Project memory project = rootFounders.getProject(id);
 
         vm.expectEmit(true, true, true, true);
@@ -51,14 +58,15 @@ contract MainContractTest is Test {
     }
 
     function test_comment() public {
-        uint id = rootFounders.createProject(DetailsLocationType.IPNS, "k51qzi5uqu5dlvj2baxnqndepeb86cbk3ng7n3i46uzyxzyqj2xjonzllnv0v8", "test comment project");
+        uint id = rootFounders.createProject(DetailsLocationType.IPFS, "k51qzi5uqu5dlvj2baxnqndepeb86cbk3ng7n3i46uzyxzyqj2xjonzllnv0v8", "test comment project");
 
         // vm.startSnapshotGas("comment");
+        // TODO: check event
         rootFounders.comment(id, "whoa such a nice project! whoa such a nice project! whoa such a nice project! whoa such a nice project! whoa such a nice project! ");
     }
 
     function test_addTeammate() public {
-        uint id = rootFounders.createProject(DetailsLocationType.IPNS, "k51qzi5uqu5dlvj2baxnqndepeb86cbk3ng7n3i46uzyxzyqj2xjonzllnv0v8", "test project");
+        uint id = rootFounders.createProject(DetailsLocationType.IPFS, "k51qzi5uqu5dlvj2baxnqndepeb86cbk3ng7n3i46uzyxzyqj2xjonzllnv0v8", "test project");
 
         vm.expectRevert("account did not apply to join team");
         rootFounders.addTeammate(id, address(1));
@@ -76,7 +84,7 @@ contract MainContractTest is Test {
     }
 
      function test_removeTeammate() public {
-        uint id = rootFounders.createProject(DetailsLocationType.IPNS, "k51qzi5uqu5dlvj2baxnqndepeb86cbk3ng7n3i46uzyxzyqj2xjonzllnv0v8", "test project");
+        uint id = rootFounders.createProject(DetailsLocationType.IPFS, "k51qzi5uqu5dlvj2baxnqndepeb86cbk3ng7n3i46uzyxzyqj2xjonzllnv0v8", "test project");
 
         rootFounders.applyTo(id);
         rootFounders.addTeammate(id, address(this));

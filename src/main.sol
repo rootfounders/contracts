@@ -6,7 +6,7 @@ import "openzeppelin-contracts/contracts/utils/structs/EnumerableSet.sol";
 import "openzeppelin-contracts/contracts/access/Ownable.sol";
 
 enum DetailsLocationType {
-    IPNS
+    IPFS
 }
 
 struct Project {
@@ -30,9 +30,10 @@ struct Project {
 contract RootFounders is Ownable {
     event Received(address, uint);
     event Fallback(address, uint);
-    event ProjectCreated(uint indexed id, address indexed owner);
+
+    event ProjectCreated(uint indexed id, address indexed owner, Project project);
     // event Tipped(address indexed from, uint indexed to, uint value, address indexed token);
-    event Commented(address indexed from, uint indexed projectId);
+    event Commented(address indexed from, uint indexed projectId, string comment);
     event Applied(uint indexed projectId, address indexed who);
     event JoinedTeam(uint indexed projectId, address indexed who);
     event LeftTeam(uint indexed projectId, address indexed who);
@@ -64,8 +65,8 @@ contract RootFounders is Ownable {
     }
 
     function createProject(DetailsLocationType detailsLocationType, string memory detailsLocation, string memory shortName) public returns (uint id) {
-        // 62 bytes is the length of IPNS name
-        require(bytes(detailsLocation).length >= 62, "detailsLocation should be at least 62 bytes long");
+        // 34 bytes is the length of IPFS name, 62 bytes would be the length of IPNS name
+        require(bytes(detailsLocation).length >= 34, "detailsLocation should be at least 34 bytes long");
         require(bytes(shortName).length > 0, "shortName is required");
 
         id = projectCounter ++;
@@ -89,7 +90,7 @@ contract RootFounders is Ownable {
         uint[] storage projects = projectsByOwner[msg.sender];
         projects.push(id);
 
-        emit ProjectCreated(id, msg.sender);
+        emit ProjectCreated(id, msg.sender, newProject);
     }
 
     // TODO: updateProject
@@ -101,16 +102,25 @@ contract RootFounders is Ownable {
         require(project.owner != address(0), "project not found");
     }
 
+    function getProjectTipJar(uint id) public view returns (address tipJar) {
+        Project memory project = getProject(id);
+        tipJar = address(project.tipJar);
+    }
+
     function comment(uint id, string calldata content) public {
         getProject(id);
         require(bytes(content).length > 0, "comment text required (calldata)");
 
-        emit Commented(msg.sender, id);
+        emit Commented(msg.sender, id, content);
     }
 
     function applyTo(uint projectId) public returns (bool) {
         getProject(projectId);
-        return EnumerableSet.add(applicantsByProjectId[projectId], msg.sender);
+        if (EnumerableSet.add(applicantsByProjectId[projectId], msg.sender)) {
+            emit Applied(projectId, msg.sender);
+            return true;
+        }
+        return false;
     }
 
     function addTeammate(uint projectId, address mate) public onlyProjectOwner(projectId) {

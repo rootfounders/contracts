@@ -10,7 +10,8 @@ contract RootFoundersScript is Script {
     function setUp() public {}
 
     function run() public {
-        vm.startBroadcast();
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(deployerPrivateKey);
 
         rootFounders = new RootFounders();
 
