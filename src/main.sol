@@ -20,13 +20,6 @@ struct Project {
     PaymentSplitter tipJar;
 }
 
-// struct Tip {
-//     address from;
-//     uint projectId;
-//     uint value;
-//     address token;
-// }
-
 contract RootFounders is Ownable {
     event Received(address, uint);
     event Fallback(address, uint);
@@ -34,6 +27,7 @@ contract RootFounders is Ownable {
     event ProjectCreated(uint indexed id, address indexed owner, Project project);
     // event Tipped(address indexed from, uint indexed to, uint value, address indexed token);
     event Commented(address indexed from, uint indexed projectId, string comment);
+    event PostedUpdate(uint indexed projectId, string comment);
     event Applied(uint indexed projectId, address indexed who);
     event JoinedTeam(uint indexed projectId, address indexed who);
     event LeftTeam(uint indexed projectId, address indexed who);
@@ -78,13 +72,13 @@ contract RootFounders is Ownable {
         newProject.detailsLocation = detailsLocation;
         newProject.shortName = shortName;
 
-        address[] memory payees = new address[](2);
+        address[] memory payees = new address[](1);
         payees[0] = msg.sender;
-        payees[1] = address(this);
+        // payees[1] = address(this);
 
-        uint256[] memory shares = new uint256[](2);
-        shares[0] = 98;
-        shares[1] = 2;
+        uint256[] memory shares = new uint256[](1);
+        shares[0] = 100;
+        // shares[1] = 0;
         newProject.tipJar = new PaymentSplitter(payees, shares);
 
         uint[] storage projects = projectsByOwner[msg.sender];
@@ -112,6 +106,13 @@ contract RootFounders is Ownable {
         require(bytes(content).length > 0, "comment text required (calldata)");
 
         emit Commented(msg.sender, id, content);
+    }
+
+    function postUpdate(uint id, string calldata content) public onlyProjectOwner(id) {
+        getProject(id);
+        require(bytes(content).length > 0, "update text required (calldata)");
+
+        emit PostedUpdate(id, content);
     }
 
     function applyTo(uint projectId) public returns (bool) {

@@ -1,4 +1,4 @@
-## RootFounders Smart Contracts
+# RootFounders Smart Contracts
 
 Currently this repository contains the main smart contract that powers RootFounders. It has been built using `foundry`.
 
